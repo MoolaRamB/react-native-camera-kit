@@ -68,24 +68,14 @@ class RNCameraKitModule(private val reactContext: ReactApplicationContext) : Nat
      * @param promise The promise to resolve the capture result.
      */
     @ReactMethod
-    override fun capture(options: ReadableMap?, tag: Double?, promise: Promise) {
+        override fun capture(options: ReadableMap?, tag: Double?, promise: Promise) {
         val viewTag = tag?.toInt()
         if (viewTag != null && options != null) {
             val uiManager = UIManagerHelper.getUIManagerForReactTag(reactContext, viewTag)
             reactContext.runOnUiQueueThread {
                 val camera = uiManager?.resolveView(viewTag) as CKCamera
-                val optionsMap = options.toHashMap()
-                    .mapValues { (_, value) ->
-                        when (value) {
-                            is ReadableMap -> value.toHashMap()
-                            is ReadableArray -> value.toArrayList()
-                            else -> value
-                        }
-                    }
-                    .mapNotNull { (key, value) ->
-                        if (value != null) key to value else null
-                    }
-                    .toMap()
+                // Convert HashMap to Map explicitly
+                val optionsMap: Map<String, Any> = options.toHashMap() as Map<String, Any>
                 camera.capture(optionsMap, promise)
             }
         } else {
