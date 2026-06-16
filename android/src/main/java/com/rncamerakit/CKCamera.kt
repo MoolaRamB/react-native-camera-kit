@@ -112,6 +112,7 @@ class CKCamera(context: ThemedReactContext) : FrameLayout(context), LifecycleObs
     }
 
     init {
+        viewFinder.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
         viewFinder.layoutParams = LinearLayout.LayoutParams(
                 LayoutParams.MATCH_PARENT,
                 LayoutParams.MATCH_PARENT
@@ -127,6 +128,19 @@ class CKCamera(context: ThemedReactContext) : FrameLayout(context), LifecycleObs
         addView(rectOverlay)
     }
 
+override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+    super.onLayout(changed, left, top, right, bottom)
+
+    if (changed && right - left > 0 && bottom - top > 0) {
+        post {
+            if (cameraProvider != null) {
+                bindCameraUseCases()
+            } else {
+                setupCamera()
+            }
+        }
+    }
+}
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         if (hasPermissions()) {
@@ -366,13 +380,18 @@ class CKCamera(context: ThemedReactContext) : FrameLayout(context), LifecycleObs
         try {
             // A variable number of use-cases can be passed here -
             // camera provides access to CameraControl & CameraInfo
+            
             val newCamera = cameraProvider.bindToLifecycle(getActivity() as AppCompatActivity, cameraSelector, *useCases.toTypedArray())
             camera = newCamera
 
             resetZoom(newCamera)
 
             // Attach the viewfinder's surface provider to preview use case
-            preview?.setSurfaceProvider(viewFinder.surfaceProvider)
+            //preview?.setSurfaceProvider(viewFinder.surfaceProvider)
+            viewFinder.post {
+    preview?.setSurfaceProvider(viewFinder.surfaceProvider)
+}
+
         } catch (exc: Exception) {
             Log.e(TAG, "Use case binding failed", exc)
 
